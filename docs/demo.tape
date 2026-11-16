@@ -2,6 +2,8 @@
 #   vhs docs/demo.tape
 # It works in a throwaway git repo and passes --skip-install / --skip-uninstall, so it never
 # touches your Brewfiles or your installed packages. `brew info` still runs for the lookups.
+#
+# The GIF opens and ends on the same title card (docs/banner.py), so it loops without a jump.
 
 Output docs/demo.gif
 
@@ -17,11 +19,23 @@ Set Theme "Catppuccin Mocha"
 Hide
 Type "unset BREWFILE_DIR BREWFILE_PREFIX BREWFILE_COMMIT_PREFIX BASH_ENV"
 Enter
-Type "export PATH=$PWD/bin:$PATH PS1='$ '"
+Type "export REPO=$PWD PATH=$PWD/bin:$PATH"
 Enter
 Type "cd $(mktemp -d) && git init -q && git config user.name Demo && git config user.email demo@example.com"
 Enter
 Type `printf '# CLI tools\nbrew "jq"\n' > Brewfile.common && git add . && git commit -qm 'Add Brewfile' && clear`
+Enter
+Type `banner() { clear; python3 $REPO/docs/banner.py "brewfile" "Keep Brewfiles in step with what you install"; }`
+Enter
+Type "PS1= && banner"
+Enter
+Show
+
+# Title card
+Sleep 2500ms
+
+Hide
+Type "tput cnorm && PS1='$ ' && clear"
 Enter
 Show
 
@@ -58,3 +72,10 @@ Type "git log --oneline"
 Sleep 500ms
 Enter
 Sleep 4s
+
+# Back to the title card, so the loop restarts on the frame it began with
+Hide
+Type "PS1= && banner"
+Enter
+Show
+Sleep 2500ms
