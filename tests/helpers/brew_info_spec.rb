@@ -1,7 +1,7 @@
-# tests/bin/helpers/brew_info_spec.rb
-# Tests for bin/helpers/brew_info.rb
+# tests/helpers/brew_info_spec.rb
+# Tests for libexec/brewfile/brew_info.rb
 #
-# Run with: ruby tests/bin/helpers/brew_info_spec.rb
+# Run with: ruby tests/helpers/brew_info_spec.rb
 
 require 'minitest/autorun'
 require 'minitest/spec'
@@ -9,7 +9,7 @@ require 'json'
 require 'tmpdir'
 require 'fileutils'
 
-HELPERS_DIR = File.expand_path('../../../bin/helpers', __dir__) unless defined?(HELPERS_DIR)
+HELPERS_DIR = File.expand_path('../../libexec/brewfile', __dir__) unless defined?(HELPERS_DIR)
 require File.join(HELPERS_DIR, 'brew_info')
 
 # ---------------------------------------------------------------------------
@@ -183,6 +183,25 @@ describe BrewInfo do
         result = BrewInfo.lookup(['nodesc'])
         _(result.first[:description]).must_be_nil
       end
+    end
+  end
+end
+
+# ---------------------------------------------------------------------------
+# Real `brew info --json=v2` output (tests/fixtures/brew-info-v2.json)
+# ---------------------------------------------------------------------------
+describe 'BrewInfo.lookup with real brew output' do
+  include BrewStubHelper
+
+  let(:real_output) { File.read(File.expand_path('../fixtures/brew-info-v2.json', __dir__)) }
+
+  it 'reads a formula and a cask from the current brew JSON layout' do
+    with_mock_brew(stdout: real_output) do
+      results = BrewInfo.lookup(%w[fzf iterm2])
+      _(results).must_equal [
+        { name: 'fzf',    type: 'brew', description: 'Command-line fuzzy finder written in Go' },
+        { name: 'iterm2', type: 'cask', description: "Terminal emulator as alternative to Apple's Terminal app" }
+      ]
     end
   end
 end

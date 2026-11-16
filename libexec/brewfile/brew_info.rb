@@ -7,8 +7,8 @@
 #   packages = BrewInfo.lookup(%w[git fzf])
 #   # => [{ name: "git", type: "brew", description: "..." }, ...]
 #
-# Not executable — called via `require_relative` from brew_add, brew_remove,
-# and brew_audit.
+# Not executable — called via `require_relative` from the add, remove and
+# audit commands.
 
 require 'json'
 require 'open3'

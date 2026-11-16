@@ -69,31 +69,31 @@ _init_real_repo() {
 
 invoke() {
   run env \
-    PATH="${TEST_TMPDIR}/mock_bin:${DOTFILES_BIN}:${PATH}" \
-    DOTFILES_ROOT="${BREWFILE_DIR}" \
-    "${DOTFILES_BIN}/brew_remove" "$@"
+    PATH="${TEST_TMPDIR}/mock_bin:${PATH}" \
+    BREWFILE_DIR="${BREWFILE_DIR}" \
+    "${REPO_BIN}/brewfile" remove "$@"
 }
 
 # ---------------------------------------------------------------------------
 # Argument / early-exit validation
 # ---------------------------------------------------------------------------
 
-@test "brew_remove: fails when no packages specified" {
+@test "brewfile remove: fails when no packages specified" {
   invoke --brewfile-suffix=test --skip-commit --skip-uninstall
   [ "${status}" -ne 0 ]
 }
 
-@test "brew_remove: fails when --brewfile-suffix and --all-brewfiles both given" {
+@test "brewfile remove: fails when --brewfile-suffix and --all-brewfiles both given" {
   invoke --brewfile-suffix=test --all-brewfiles --skip-commit --skip-uninstall git
   [ "${status}" -ne 0 ]
 }
 
-@test "brew_remove: fails when --brewfile-suffix names a non-existent Brewfile" {
+@test "brewfile remove: fails when --brewfile-suffix names a non-existent Brewfile" {
   invoke --brewfile-suffix=doesnotexist --skip-commit --skip-uninstall git
   [ "${status}" -ne 0 ]
 }
 
-@test "brew_remove: --help exits 0 and prints usage" {
+@test "brewfile remove: --help exits 0 and prints usage" {
   invoke --help
   [ "${status}" -eq 0 ]
   [[ "${output}" == *"Usage"* ]] || {
@@ -101,19 +101,19 @@ invoke() {
   }
 }
 
-@test "brew_remove: --help works when invoked by a relative path" {
-  cd "${DOTFILES_ROOT}"
-  run bin/brew_remove --help
+@test "brewfile remove: --help works when invoked by a relative path" {
+  cd "${REPO_ROOT}"
+  run bin/brewfile remove --help
   [ "${status}" -eq 0 ] || { echo "status ${status}: ${output}"; return 1; }
   [[ "${output}" == *"Usage:"* ]] || { echo "Expected usage text; got: ${output}"; return 1; }
 }
 
-@test "brew_remove: --help prints only the header comment block" {
-  run "${DOTFILES_BIN}/brew_remove" --help
+@test "brewfile remove: --help prints only the header comment block" {
+  run "${REPO_BIN}/brewfile" remove --help
   [ "${status}" -eq 0 ]
   [[ "${output}" != *"-----"* ]] || { echo "Expected no section dividers in help; got: ${output}"; return 1; }
   last_line="$(printf '%s\n' "${output}" | tail -1)"
-  header_last="$(sed -n '/^set -euo pipefail/{x;p;q;};h' "${DOTFILES_BIN}/brew_remove" | sed 's/^# \{0,1\}//')"
+  header_last="$(sed -n '/^set -euo pipefail/{x;p;q;};h' "${REPO_ROOT}/libexec/brewfile/remove" | sed 's/^# \{0,1\}//')"
   [ "${last_line}" = "${header_last}" ] || {
     echo "Expected help to end with the header's last line '${header_last}'; got '${last_line}'"; return 1
   }
@@ -123,7 +123,7 @@ invoke() {
 # Successful remove from a single Brewfile
 # ---------------------------------------------------------------------------
 
-@test "brew_remove: removes a package from the specified Brewfile" {
+@test "brewfile remove: removes a package from the specified Brewfile" {
   invoke --brewfile-suffix=test --skip-commit --skip-uninstall git
   [ "${status}" -eq 0 ]
   ! grep -q '"git"' "${BREWFILE_DIR}/Brewfile.test" || {
@@ -133,7 +133,7 @@ invoke() {
   }
 }
 
-@test "brew_remove: reports the removed package on stdout" {
+@test "brewfile remove: reports the removed package on stdout" {
   invoke --brewfile-suffix=test --skip-commit --skip-uninstall git
   [ "${status}" -eq 0 ]
   [[ "${output}" == *"git"* ]] || {
@@ -141,7 +141,7 @@ invoke() {
   }
 }
 
-@test "brew_remove: does not remove package from non-targeted Brewfile" {
+@test "brewfile remove: does not remove package from non-targeted Brewfile" {
   invoke --brewfile-suffix=test --skip-commit --skip-uninstall git
   [ "${status}" -eq 0 ]
   grep -q '"git"' "${BREWFILE_DIR}/Brewfile.other" || {
@@ -154,7 +154,7 @@ invoke() {
 # --all-brewfiles
 # ---------------------------------------------------------------------------
 
-@test "brew_remove: removes package from all Brewfiles when --all-brewfiles set" {
+@test "brewfile remove: removes package from all Brewfiles when --all-brewfiles set" {
   invoke --all-brewfiles --skip-commit --skip-uninstall git
   [ "${status}" -eq 0 ]
   ! grep -q '"git"' "${BREWFILE_DIR}/Brewfile.test" || {
@@ -169,7 +169,7 @@ invoke() {
 # Not found
 # ---------------------------------------------------------------------------
 
-@test "brew_remove: reports skipped when package not in Brewfile" {
+@test "brewfile remove: reports skipped when package not in Brewfile" {
   cat > "${TEST_TMPDIR}/mock_bin/brew" <<'EOF'
 #!/usr/bin/env bash
 if [[ "$1" == "info" ]]; then
@@ -189,7 +189,7 @@ EOF
 # --skip-uninstall
 # ---------------------------------------------------------------------------
 
-@test "brew_remove: does not call brew uninstall when --skip-uninstall is set" {
+@test "brewfile remove: does not call brew uninstall when --skip-uninstall is set" {
   uninstall_log="${TEST_TMPDIR}/uninstall_called"
   cat > "${TEST_TMPDIR}/mock_bin/brew" <<EOF
 #!/usr/bin/env bash
@@ -208,7 +208,7 @@ EOF
   }
 }
 
-@test "brew_remove: calls brew uninstall when --skip-uninstall not set" {
+@test "brewfile remove: calls brew uninstall when --skip-uninstall not set" {
   uninstall_log="${TEST_TMPDIR}/uninstall_called"
   cat > "${TEST_TMPDIR}/mock_bin/brew" <<EOF
 #!/usr/bin/env bash
@@ -231,7 +231,7 @@ EOF
 # --skip-commit
 # ---------------------------------------------------------------------------
 
-@test "brew_remove: does not call git commit when --skip-commit is set" {
+@test "brewfile remove: does not call git commit when --skip-commit is set" {
   commit_log="${TEST_TMPDIR}/commit_called"
   cat > "${TEST_TMPDIR}/mock_bin/git" <<EOF
 #!/usr/bin/env bash
@@ -246,7 +246,7 @@ EOF
   }
 }
 
-@test "brew_remove: commits only the Brewfile, leaving other staged changes staged" {
+@test "brewfile remove: commits only the Brewfile, leaving other staged changes staged" {
   _init_real_repo
   echo "unrelated" > "${BREWFILE_DIR}/unrelated.txt"
   git -C "${BREWFILE_DIR}" add unrelated.txt
@@ -263,12 +263,12 @@ EOF
   }
 }
 
-@test "brew_remove: commit message lists every changed Brewfile" {
+@test "brewfile remove: commit message lists every changed Brewfile" {
   _init_real_repo
   invoke --all-brewfiles --skip-uninstall git
   [ "${status}" -eq 0 ]
   subject="$(git -C "${BREWFILE_DIR}" log -1 --format=%s)"
-  [ "${subject}" = "brew_remove: remove git from Brewfile.other, Brewfile.test" ] || {
+  [ "${subject}" = "brewfile remove: remove git from Brewfile.other, Brewfile.test" ] || {
     echo "Unexpected commit subject: ${subject}"; return 1
   }
 }
@@ -277,7 +277,7 @@ EOF
 # brew info failure
 # ---------------------------------------------------------------------------
 
-@test "brew_remove: exits non-zero when brew info fails" {
+@test "brewfile remove: exits non-zero when brew info fails" {
   cat > "${TEST_TMPDIR}/mock_bin/brew" <<'EOF'
 #!/usr/bin/env bash
 if [[ "$1" == "info" ]]; then
@@ -288,4 +288,37 @@ exit 0
 EOF
   invoke --brewfile-suffix=test --skip-commit --skip-uninstall nonexistent-pkg
   [ "${status}" -ne 0 ]
+}
+
+# ---------------------------------------------------------------------------
+# Formulae from third-party taps (tests/fixtures/brew-info-v2-tap.json is real
+# `brew info --json=v2` output for chrisbloom7/tap/wt-cleanup)
+# ---------------------------------------------------------------------------
+
+_mock_brew_info_from_tap_fixture() {
+  cat > "${TEST_TMPDIR}/mock_bin/brew" <<MOCK
+#!/usr/bin/env bash
+if [[ "\$1" == "info" ]]; then
+  cat "${REPO_ROOT}/tests/fixtures/brew-info-v2-tap.json"
+  exit 0
+fi
+exit 0
+MOCK
+  chmod +x "${TEST_TMPDIR}/mock_bin/brew"
+}
+
+@test "brewfile remove: removes a tap formula tracked under its short name" {
+  _mock_brew_info_from_tap_fixture
+  echo 'brew "wt-cleanup" # Interactive fzf cleanup' >> "${BREWFILE_DIR}/Brewfile.test"
+  invoke -b test -S -U chrisbloom7/tap/wt-cleanup
+  [ "${status}" -eq 0 ] || { echo "status ${status}: ${output}"; return 1; }
+  ! grep -q 'wt-cleanup' "${BREWFILE_DIR}/Brewfile.test" || { cat "${BREWFILE_DIR}/Brewfile.test"; return 1; }
+}
+
+@test "brewfile remove: removes a tap formula tracked under its tap-qualified name" {
+  _mock_brew_info_from_tap_fixture
+  echo 'brew "chrisbloom7/tap/wt-cleanup" # Interactive fzf cleanup' >> "${BREWFILE_DIR}/Brewfile.test"
+  invoke -b test -S -U chrisbloom7/tap/wt-cleanup
+  [ "${status}" -eq 0 ] || { echo "status ${status}: ${output}"; return 1; }
+  ! grep -q 'wt-cleanup' "${BREWFILE_DIR}/Brewfile.test" || { cat "${BREWFILE_DIR}/Brewfile.test"; return 1; }
 }

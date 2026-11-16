@@ -2,7 +2,7 @@
 # Adds one or more Homebrew packages to a Brewfile and optionally installs them.
 #
 # Usage:
-#   brew_add [options] <package> [<package> ...]
+#   brewfile add [options] <package> [<package> ...]
 #
 # Options:
 #   -b, --brewfile, --brewfile-suffix=<suffix>  Target Brewfile suffix (e.g. "common")
@@ -10,11 +10,8 @@
 #   -I, --skip-install, --no-install            Skip running brew install
 #   -h, --help                                  Show this help message
 set -euo pipefail
-cd "$(dirname "$0")"
-source "${PWD}/helpers/trap_and_trace.sh"
-PATH="${PWD}:${PATH}"
-
-DOTFILES_ROOT="${DOTFILES_ROOT:-"$(cd "${PWD}/.." && pwd)"}"
+LIBEXEC_DIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${LIBEXEC_DIR}/lib.sh"
 
 # ---------------------------------------------------------------------------
 # Defaults
@@ -29,7 +26,7 @@ PACKAGES=()
 # ---------------------------------------------------------------------------
 usage() {
   # Print the header comment block, stopping at the first non-comment line
-  awk 'NR == 1 && /^#!/ { next } !/^#/ { exit } { sub(/^# ?/, ""); print }' "${PWD}/$(basename "$0")"
+  awk 'NR == 1 && /^#!/ { next } !/^#/ { exit } { sub(/^# ?/, ""); print }' "${BASH_SOURCE[0]}"
 }
 
 # ---------------------------------------------------------------------------
@@ -68,15 +65,15 @@ fi
 # Brewfile selection / validation
 # ---------------------------------------------------------------------------
 if [[ -n "${BREWFILE_SUFFIX}" ]]; then
-  BREWFILE="${DOTFILES_ROOT}/Brewfile.${BREWFILE_SUFFIX}"
+  BREWFILE="${BREWFILE_DIR}/${BREWFILE_PREFIX}${BREWFILE_SUFFIX}"
   if [[ ! -f "${BREWFILE}" ]]; then
-    log_error "Brewfile.${BREWFILE_SUFFIX} not found in ${DOTFILES_ROOT}"
+    log_error "${BREWFILE_PREFIX}${BREWFILE_SUFFIX} not found in ${BREWFILE_DIR}"
     exit 1
   fi
 else
-  mapfile -t BREWFILES < <(find "${DOTFILES_ROOT}" -maxdepth 1 -name 'Brewfile.*' | sort)
+  mapfile -t BREWFILES < <(brewfile_paths)
   if [[ ${#BREWFILES[@]} -eq 0 ]]; then
-    log_error "No Brewfile.* files found in ${DOTFILES_ROOT}"
+    log_error "No ${BREWFILE_PREFIX}* files found in ${BREWFILE_DIR}"
     exit 1
   fi
   BREWFILE_LABELS=()
@@ -88,17 +85,17 @@ else
     log_error "No Brewfile selected"
     exit 1
   }
-  BREWFILE_SUFFIX="${selected#Brewfile.}"
-  BREWFILE="${DOTFILES_ROOT}/${selected}"
+  BREWFILE_SUFFIX="${selected#"${BREWFILE_PREFIX}"}"
+  BREWFILE="${BREWFILE_DIR}/${selected}"
 fi
 
 # ---------------------------------------------------------------------------
 # Uncommitted changes check (skipped if --skip-commit)
 # ---------------------------------------------------------------------------
 if [[ "${SKIP_COMMIT}" == false ]]; then
-  if ! git -C "${DOTFILES_ROOT}" diff --quiet -- "${BREWFILE}" 2>/dev/null || \
-     ! git -C "${DOTFILES_ROOT}" diff --cached --quiet -- "${BREWFILE}" 2>/dev/null; then
-    log_error "Brewfile.${BREWFILE_SUFFIX} has uncommitted changes. Commit or stash them first, or pass --skip-commit."
+  if ! git -C "${BREWFILE_DIR}" diff --quiet -- "${BREWFILE}" 2>/dev/null || \
+     ! git -C "${BREWFILE_DIR}" diff --cached --quiet -- "${BREWFILE}" 2>/dev/null; then
+    log_error "${BREWFILE_PREFIX}${BREWFILE_SUFFIX} has uncommitted changes. Commit or stash them first, or pass --skip-commit."
     exit 1
   fi
 fi
@@ -124,9 +121,9 @@ HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_ENV_HINTS=1 \
 # ---------------------------------------------------------------------------
 # Modify Brewfile via Ruby helper
 # ---------------------------------------------------------------------------
-ruby "${PWD}/helpers/brew_add_helper.rb" "${BREWFILE}" \
+ruby "${LIBEXEC_DIR}/brew_add_helper.rb" "${BREWFILE}" \
   < "${INFO_FILE}" > "${RESULTS_FILE}" || {
-  log_error "Failed to update Brewfile.${BREWFILE_SUFFIX}"
+  log_error "Failed to update ${BREWFILE_PREFIX}${BREWFILE_SUFFIX}"
   exit 1
 }
 
@@ -176,15 +173,15 @@ fi
 # Git commit
 # ---------------------------------------------------------------------------
 if [[ "${SKIP_COMMIT}" == false ]]; then
-  if ! git -C "${DOTFILES_ROOT}" diff --quiet -- "${BREWFILE}" 2>/dev/null; then
+  if ! git -C "${BREWFILE_DIR}" diff --quiet -- "${BREWFILE}" 2>/dev/null; then
     added_names=$(ruby -e '
       require "json"
       r = JSON.parse(File.read(ARGV[0]))
       puts r.reject{|x| x["status"]=="already_present"}.map{|x| x["name"]}.join(", ")
     ' "${RESULTS_FILE}")
-    commit_msg="brew_add: add ${added_names} to Brewfile.${BREWFILE_SUFFIX}"
+    commit_msg="${BREWFILE_COMMIT_PREFIX:-brewfile add}: add ${added_names} to ${BREWFILE_PREFIX}${BREWFILE_SUFFIX}"
     # Commit only the Brewfile, leaving anything else in the index staged
-    git -C "${DOTFILES_ROOT}" commit -m "${commit_msg}" -- "${BREWFILE}" || {
+    git -C "${BREWFILE_DIR}" commit -m "${commit_msg}" -- "${BREWFILE}" || {
       log_error "git commit failed"
       exit 1
     }
@@ -197,18 +194,18 @@ fi
 ruby -e '
   require "json"
   results = JSON.parse(File.read(ARGV[0]))
-  suffix  = ARGV[1]
+  label   = ARGV[1]
   results.each do |r|
     case r["status"]
     when "added"
-      puts "Added #{r["type"]} \"#{r["name"]}\" to Brewfile.#{suffix}"
+      puts "Added #{r["type"]} \"#{r["name"]}\" to #{label}"
     when "uncommented"
-      puts "Uncommented #{r["type"]} \"#{r["name"]}\" in Brewfile.#{suffix}"
+      puts "Uncommented #{r["type"]} \"#{r["name"]}\" in #{label}"
     when "already_present"
-      puts "Skipped #{r["type"]} \"#{r["name"]}\" — already present in Brewfile.#{suffix}"
+      puts "Skipped #{r["type"]} \"#{r["name"]}\" — already present in #{label}"
     end
   end
-' "${RESULTS_FILE}" "${BREWFILE_SUFFIX}"
+' "${RESULTS_FILE}" "${BREWFILE_PREFIX}${BREWFILE_SUFFIX}"
 
 for i in "${!CAVEAT_PKGS[@]}"; do
   printf '\nPost-install caveat (%s):\n%s\n' "${CAVEAT_PKGS[$i]}" "${CAVEAT_TEXTS[$i]}"

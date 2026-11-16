@@ -1,12 +1,13 @@
-# tests/bin/helpers/brewfile_spec.rb
-# Tests for bin/helpers/brewfile.rb
+# tests/helpers/brewfile_spec.rb
+# Tests for libexec/brewfile/brewfile.rb
 #
-# Run with: ruby tests/bin/helpers/brewfile_spec.rb
+# Run with: ruby tests/helpers/brewfile_spec.rb
 
 require 'minitest/autorun'
 require 'minitest/spec'
+require 'json'
 
-HELPERS_DIR = File.expand_path('../../../bin/helpers', __dir__) unless defined?(HELPERS_DIR)
+HELPERS_DIR = File.expand_path('../../libexec/brewfile', __dir__) unless defined?(HELPERS_DIR)
 require File.join(HELPERS_DIR, 'brewfile')
 
 # ---------------------------------------------------------------------------
@@ -396,5 +397,52 @@ describe Brewfile do
       bf = brewfile(SIMPLE)
       _(bf.to_s).must_equal SIMPLE
     end
+  end
+end
+
+# ---------------------------------------------------------------------------
+# Lines that real Brewfiles and `brew bundle dump` produce
+# ---------------------------------------------------------------------------
+describe 'Brewfile mas ids' do
+  it 'parses ids written with underscore digit groups' do
+    bf = Brewfile.from_string(%(mas "Encrypto", id: 935_235_287\nmas "Bear", id: 1091189122\n))
+    _(bf.entries.map { |e| e[:name] }).must_equal %w[Encrypto Bear]
+  end
+
+  it 'finds and removes an entry whose id has underscores' do
+    bf = Brewfile.from_string(%(## MAS\nmas "Photomator", id: 1_444_636_541\n))
+    _(bf.find(name: 'Photomator', type: 'mas')).wont_be_nil
+    bf.remove(name: 'Photomator', type: 'mas')
+    _(bf.entries).must_be_empty
+  end
+end
+
+# ---------------------------------------------------------------------------
+# Tap-qualified names (real `brew info --json=v2` output)
+# ---------------------------------------------------------------------------
+describe 'Brewfile names from brew info' do
+  let(:core_info) { JSON.parse(File.read(File.expand_path('../fixtures/brew-info-v2.json', __dir__))) }
+  let(:tap_info) { JSON.parse(File.read(File.expand_path('../fixtures/brew-info-v2-tap.json', __dir__))) }
+
+  it 'uses the short name for a homebrew/core formula' do
+    _(Brewfile.formula_name(core_info['formulae'][0])).must_equal 'fzf'
+  end
+
+  it 'uses the token for a homebrew/cask cask' do
+    _(Brewfile.cask_name(core_info['casks'][0])).must_equal 'iterm2'
+  end
+
+  it 'uses the tap-qualified name for a formula from another tap' do
+    _(Brewfile.formula_name(tap_info['formulae'][0])).must_equal 'chrisbloom7/tap/wt-cleanup'
+  end
+
+  it 'falls back to the plain name when the info has no tap' do
+    _(Brewfile.formula_name('name' => 'git')).must_equal 'git'
+    _(Brewfile.cask_name('token' => 'iterm2')).must_equal 'iterm2'
+  end
+
+  it 'strips a tap prefix with short_name' do
+    _(Brewfile.short_name('chrisbloom7/tap/wt-cleanup')).must_equal 'wt-cleanup'
+    _(Brewfile.short_name('fzf')).must_equal 'fzf'
   end
 end

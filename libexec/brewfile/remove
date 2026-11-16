@@ -2,7 +2,7 @@
 # Removes one or more Homebrew packages from a Brewfile and optionally uninstalls them.
 #
 # Usage:
-#   brew_remove [options] <package> [<package> ...]
+#   brewfile remove [options] <package> [<package> ...]
 #
 # Options:
 #   -b, --brewfile, --brewfile-suffix=<suffix>  Target Brewfile suffix (e.g. "common")
@@ -11,11 +11,8 @@
 #   -U, --skip-uninstall, --no-uninstall        Skip running brew uninstall
 #   -h, --help                                  Show this help message
 set -euo pipefail
-cd "$(dirname "$0")"
-source "${PWD}/helpers/trap_and_trace.sh"
-PATH="${PWD}:${PATH}"
-
-DOTFILES_ROOT="${DOTFILES_ROOT:-"$(cd "${PWD}/.." && pwd)"}"
+LIBEXEC_DIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${LIBEXEC_DIR}/lib.sh"
 
 # ---------------------------------------------------------------------------
 # Defaults
@@ -31,7 +28,7 @@ PACKAGES=()
 # ---------------------------------------------------------------------------
 usage() {
   # Print the header comment block, stopping at the first non-comment line
-  awk 'NR == 1 && /^#!/ { next } !/^#/ { exit } { sub(/^# ?/, ""); print }' "${PWD}/$(basename "$0")"
+  awk 'NR == 1 && /^#!/ { next } !/^#/ { exit } { sub(/^# ?/, ""); print }' "${BASH_SOURCE[0]}"
 }
 
 # ---------------------------------------------------------------------------
@@ -79,22 +76,22 @@ fi
 declare -a TARGET_BREWFILES=()
 
 if [[ "${ALL_BREWFILES}" == true ]]; then
-  mapfile -t TARGET_BREWFILES < <(find "${DOTFILES_ROOT}" -maxdepth 1 -name 'Brewfile.*' | sort)
+  mapfile -t TARGET_BREWFILES < <(brewfile_paths)
   if [[ ${#TARGET_BREWFILES[@]} -eq 0 ]]; then
-    log_error "No Brewfile.* files found in ${DOTFILES_ROOT}"
+    log_error "No ${BREWFILE_PREFIX}* files found in ${BREWFILE_DIR}"
     exit 1
   fi
 elif [[ -n "${BREWFILE_SUFFIX}" ]]; then
-  BREWFILE="${DOTFILES_ROOT}/Brewfile.${BREWFILE_SUFFIX}"
+  BREWFILE="${BREWFILE_DIR}/${BREWFILE_PREFIX}${BREWFILE_SUFFIX}"
   if [[ ! -f "${BREWFILE}" ]]; then
-    log_error "Brewfile.${BREWFILE_SUFFIX} not found in ${DOTFILES_ROOT}"
+    log_error "${BREWFILE_PREFIX}${BREWFILE_SUFFIX} not found in ${BREWFILE_DIR}"
     exit 1
   fi
   TARGET_BREWFILES=("${BREWFILE}")
 else
-  mapfile -t BREWFILES < <(find "${DOTFILES_ROOT}" -maxdepth 1 -name 'Brewfile.*' | sort)
+  mapfile -t BREWFILES < <(brewfile_paths)
   if [[ ${#BREWFILES[@]} -eq 0 ]]; then
-    log_error "No Brewfile.* files found in ${DOTFILES_ROOT}"
+    log_error "No ${BREWFILE_PREFIX}* files found in ${BREWFILE_DIR}"
     exit 1
   fi
   BREWFILE_LABELS=("ALL")
@@ -115,8 +112,8 @@ else
     TARGET_BREWFILES=("${BREWFILES[@]}")
     ALL_BREWFILES=true
   else
-    BREWFILE_SUFFIX="${selected#Brewfile.}"
-    TARGET_BREWFILES=("${DOTFILES_ROOT}/${selected}")
+    BREWFILE_SUFFIX="${selected#"${BREWFILE_PREFIX}"}"
+    TARGET_BREWFILES=("${BREWFILE_DIR}/${selected}")
   fi
 fi
 
@@ -126,8 +123,8 @@ fi
 if [[ "${SKIP_COMMIT}" == false ]]; then
   for bf in "${TARGET_BREWFILES[@]}"; do
     bf_name="$(basename "${bf}")"
-    if ! git -C "${DOTFILES_ROOT}" diff --quiet -- "${bf}" 2>/dev/null || \
-       ! git -C "${DOTFILES_ROOT}" diff --cached --quiet -- "${bf}" 2>/dev/null; then
+    if ! git -C "${BREWFILE_DIR}" diff --quiet -- "${bf}" 2>/dev/null || \
+       ! git -C "${BREWFILE_DIR}" diff --cached --quiet -- "${bf}" 2>/dev/null; then
       log_error "${bf_name} has uncommitted changes. Commit or stash them first, or pass --skip-commit."
       exit 1
     fi
@@ -155,7 +152,7 @@ HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_ENV_HINTS=1 \
 # ---------------------------------------------------------------------------
 # Modify Brewfile(s) via Ruby helper
 # ---------------------------------------------------------------------------
-ruby "${PWD}/helpers/brew_remove_helper.rb" "${TARGET_BREWFILES[@]}" \
+ruby "${LIBEXEC_DIR}/brew_remove_helper.rb" "${TARGET_BREWFILES[@]}" \
   < "${INFO_FILE}" > "${RESULTS_FILE}" || {
   log_error "Failed to update Brewfile(s)"
   exit 1
@@ -189,7 +186,7 @@ fi
 if [[ "${SKIP_COMMIT}" == false ]]; then
   declare -a CHANGED_BREWFILES=()
   for bf in "${TARGET_BREWFILES[@]}"; do
-    if ! git -C "${DOTFILES_ROOT}" diff --quiet -- "${bf}" 2>/dev/null; then
+    if ! git -C "${BREWFILE_DIR}" diff --quiet -- "${bf}" 2>/dev/null; then
       CHANGED_BREWFILES+=("${bf}")
     fi
   done
@@ -204,9 +201,9 @@ if [[ "${SKIP_COMMIT}" == false ]]; then
     for bf in "${CHANGED_BREWFILES[@]}"; do
       brewfile_names+="${brewfile_names:+, }$(basename "${bf}")"
     done
-    commit_msg="brew_remove: remove ${removed_names} from ${brewfile_names}"
+    commit_msg="${BREWFILE_COMMIT_PREFIX:-brewfile remove}: remove ${removed_names} from ${brewfile_names}"
     # Commit only the Brewfile(s), leaving anything else in the index staged
-    git -C "${DOTFILES_ROOT}" commit -m "${commit_msg}" -- "${CHANGED_BREWFILES[@]}" || {
+    git -C "${BREWFILE_DIR}" commit -m "${commit_msg}" -- "${CHANGED_BREWFILES[@]}" || {
       log_error "git commit failed"
       exit 1
     }
