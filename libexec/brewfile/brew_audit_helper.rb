@@ -1,9 +1,9 @@
 # brew_audit_helper.rb
 # Computes the diff between installed Homebrew packages (Set A) and packages
-# tracked in Brewfiles (Set B). Called by bin/brew_audit — not executable.
+# tracked in Brewfiles (Set B). Called by libexec/brewfile/audit — not executable.
 #
 # Usage:
-#   ruby helpers/brew_audit_helper.rb \
+#   ruby libexec/brewfile/brew_audit_helper.rb \
 #     --installed=<brew_bundle_dump_output_file> \
 #     --brewfiles=<path1>,<path2>,... \
 #     [--types=brew,cask,...]
@@ -93,21 +93,27 @@ set_b = seen_b.values
 # ---------------------------------------------------------------------------
 # Compute diff
 # ---------------------------------------------------------------------------
-a_keys = set_a.map { |p| "#{p[:type]}:#{p[:name]}" }.to_set
-b_keys = set_b.map { |p| "#{p[:type]}:#{p[:name]}" }.to_set
+# `brew bundle dump` writes tap formulae and casks with their tap prefix
+# (`brew "user/tap/name"`), while a Brewfile may track the short name. Compare
+# brew and cask entries on the short name so the two forms match.
+def audit_key(pkg)
+  name = %w[brew cask].include?(pkg[:type]) ? Brewfile.short_name(pkg[:name]) : pkg[:name]
+  "#{pkg[:type]}:#{name}"
+end
+
+a_keys = set_a.map { |p| audit_key(p) }.to_set
+b_keys = set_b.map { |p| audit_key(p) }.to_set
 
 results = []
 
 set_a.each do |p|
-  key = "#{p[:type]}:#{p[:name]}"
-  unless b_keys.include?(key)
+  unless b_keys.include?(audit_key(p))
     results << { 'name' => p[:name], 'type' => p[:type], 'description' => p[:description], 'status' => '+' }
   end
 end
 
 set_b.each do |p|
-  key = "#{p[:type]}:#{p[:name]}"
-  unless a_keys.include?(key)
+  unless a_keys.include?(audit_key(p))
     results << { 'name' => p[:name], 'type' => p[:type], 'description' => p[:description]&.to_s, 'status' => '-' }
   end
 end

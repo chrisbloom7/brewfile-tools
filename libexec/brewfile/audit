@@ -3,7 +3,7 @@
 # Packages installed but not tracked are marked "+"; tracked but not installed are "-".
 #
 # Usage:
-#   brew_audit [options]
+#   brewfile audit [options]
 #
 # Options:
 #   -a, --all                     Include all tracked package types (default)
@@ -19,11 +19,8 @@
 # Tracked package types (passed to `brew bundle dump` when --all is used):
 #   formulae, casks, mas, npm, taps, vscode
 set -euo pipefail
-cd "$(dirname "$0")"
-source "${PWD}/helpers/trap_and_trace.sh"
-PATH="${PWD}:${PATH}"
-
-DOTFILES_ROOT="${DOTFILES_ROOT:-"$(cd "${PWD}/.." && pwd)"}"
+LIBEXEC_DIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${LIBEXEC_DIR}/lib.sh"
 
 # ---------------------------------------------------------------------------
 # Defaults
@@ -48,7 +45,7 @@ ALL_DUMP_FLAGS=(--formulae --casks --taps --mas --vscode --npm)
 # ---------------------------------------------------------------------------
 usage() {
   # Print the header comment block, stopping at the first non-comment line
-  awk 'NR == 1 && /^#!/ { next } !/^#/ { exit } { sub(/^# ?/, ""); print }' "${PWD}/$(basename "$0")"
+  awk 'NR == 1 && /^#!/ { next } !/^#/ { exit } { sub(/^# ?/, ""); print }' "${BASH_SOURCE[0]}"
 }
 
 # ---------------------------------------------------------------------------
@@ -97,9 +94,9 @@ if [[ "${OPT_ALL}" == true && ${#SELECTIVE_FLAGS[@]} -gt 0 ]]; then
   exit 1
 fi
 
-mapfile -t BREWFILES < <(find "${DOTFILES_ROOT}" -maxdepth 1 -name 'Brewfile.*' | sort)
+mapfile -t BREWFILES < <(brewfile_paths)
 if [[ ${#BREWFILES[@]} -eq 0 ]]; then
-  log_error "No Brewfile.* files found in ${DOTFILES_ROOT}"
+  log_error "No ${BREWFILE_PREFIX}* files found in ${BREWFILE_DIR}"
   exit 1
 fi
 
@@ -147,7 +144,7 @@ HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_ENV_HINTS=1 \
 # Compute diff via Ruby helper
 # ---------------------------------------------------------------------------
 BREWFILE_LIST=$(IFS=,; echo "${BREWFILES[*]}")
-ruby "${PWD}/helpers/brew_audit_helper.rb" \
+ruby "${LIBEXEC_DIR}/brew_audit_helper.rb" \
   "--installed=${DUMP_FILE}" \
   "--brewfiles=${BREWFILE_LIST}" \
   ${TYPE_FILTER:+"--types=${TYPE_FILTER}"} \

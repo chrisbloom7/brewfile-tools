@@ -8,8 +8,8 @@
 #   bf.remove(name: 'wget', type: 'brew')
 #   bf.write(path)
 #
-# Not executable — called via `require_relative` from brew_add, brew_remove,
-# and brew_audit.
+# Not executable — called via `require_relative` from the add, remove and
+# audit commands.
 
 class Brewfile
   # Maps Brewfile type keywords to section header labels and back.
@@ -23,6 +23,23 @@ class Brewfile
   }.freeze
 
   HEADER_TO_TYPE = TYPE_TO_HEADER.invert.freeze
+
+  # Name to write in a Brewfile for a `brew info --json=v2` formula entry:
+  # the short name for homebrew/core, the tap-qualified name for any other tap,
+  # which is how `brew bundle dump` writes it.
+  def self.formula_name(info)
+    info['tap'].nil? || info['tap'] == 'homebrew/core' ? info['name'] : (info['full_name'] || info['name'])
+  end
+
+  # Same for a cask entry: the token for homebrew/cask, the full token otherwise.
+  def self.cask_name(info)
+    info['tap'].nil? || info['tap'] == 'homebrew/cask' ? info['token'] : (info['full_token'] || info['token'])
+  end
+
+  # The name without any `user/repo/` tap prefix.
+  def self.short_name(name)
+    name.split('/').last
+  end
 
   # Returns the section header string for a given type keyword.
   # Falls back to "<Titlecased Type> Packages" for unknown types.
@@ -146,7 +163,7 @@ class Brewfile
   # Parsing
   # -------------------------------------------------------------------------
 
-  ENTRY_RE = /\A(\s*#\s*)?(brew|cask|mas|vscode|tap|npm)\s+"([^"]+)"(?:\s*,\s*id:\s*(\d+))?(?:\s+#\s*(.*))?\z/
+  ENTRY_RE = /\A(\s*#\s*)?(brew|cask|mas|vscode|tap|npm)\s+"([^"]+)"(?:\s*,\s*id:\s*([\d_]+))?(?:\s+#\s*(.*))?\z/
 
   def parse(content)
     content.split("\n", -1).map do |raw|

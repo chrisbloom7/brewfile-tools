@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# Manage Homebrew Brewfiles: add and remove packages, audit installed against tracked.
+#
+# Usage:
+#   brewfile [-C <dir>] <command> [options]
+#
+# Commands:
+#   add <package>...      Add packages to a Brewfile and optionally install them
+#   remove <package>...   Remove packages from a Brewfile and optionally uninstall them
+#   audit                 Compare installed packages with the tracked Brewfiles
+#   help [<command>]      Show this help, or the help for one command
+#
+# Options:
+#   -C, --dir <dir>       Directory that holds the Brewfiles
+#                         (default: the git root of the current directory)
+#   -h, --help            Show this help message
+#
+# Environment:
+#   BREWFILE_DIR            Same as --dir
+#   BREWFILE_PREFIX         File name prefix of the Brewfiles (default: "Brewfile.")
+#   BREWFILE_COMMIT_PREFIX  Prefix of the commit messages add and remove write
+#                           (default: "brewfile add" / "brewfile remove")
+#
+# Run `brewfile <command> --help` for the options of each command.
+set -euo pipefail
+
+if (( BASH_VERSINFO[0] < 4 )); then
+  echo "Error: brewfile requires bash 4 or newer (found ${BASH_VERSION})" >&2
+  exit 1
+fi
+
+# Resolve the real script location, following symlinks (macOS readlink lacks -f)
+_source="${BASH_SOURCE[0]}"
+while [[ -L "${_source}" ]]; do
+  _dir="$(cd -P "$(dirname "${_source}")" && pwd)"
+  _source="$(readlink "${_source}")"
+  [[ "${_source}" != /* ]] && _source="${_dir}/${_source}"
+done
+SCRIPT_PATH="$(cd -P "$(dirname "${_source}")" && pwd)/$(basename "${_source}")"
+LIBEXEC_DIR="$(cd -P "$(dirname "${SCRIPT_PATH}")/../libexec/brewfile" && pwd)"
+
+usage() {
+  # Print the header comment block, stopping at the first non-comment line
+  awk 'NR == 1 && /^#!/ { next } !/^#/ { exit } { sub(/^# ?/, ""); print }' "${SCRIPT_PATH}"
+}
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -h|--help)
+      usage; exit 0 ;;
+    -C|--dir)
+      [[ $# -ge 2 ]] || { echo "Error: $1 requires a directory" >&2; exit 1; }
+      export BREWFILE_DIR="$2"; shift 2 ;;
+    --dir=*)
+      export BREWFILE_DIR="${1#*=}"; shift ;;
+    -*)
+      echo "Error: Unknown option: $1" >&2; usage >&2; exit 1 ;;
+    *)
+      break ;;
+  esac
+done
+
+command_name="${1:-}"
+[[ $# -gt 0 ]] && shift
+
+case "${command_name}" in
+  add|remove|audit)
+    exec "${LIBEXEC_DIR}/${command_name}" "$@" ;;
+  help)
+    if [[ -n "${1:-}" ]]; then
+      case "$1" in
+        add|remove|audit) exec "${LIBEXEC_DIR}/$1" --help ;;
+        *) echo "Error: Unknown command: $1" >&2; exit 1 ;;
+      esac
+    fi
+    usage ;;
+  "")
+    usage >&2; exit 1 ;;
+  *)
+    echo "Error: Unknown command: ${command_name}" >&2; usage >&2; exit 1 ;;
+esac

@@ -1,0 +1,13 @@
+tap "buo/cask-upgrade", trusted: true
+# Codec library for encoding and decoding AV1 video streams
+brew "aom"
+# Command-line fuzzy finder written in Go
+brew "fzf"
+# Lightweight and flexible command-line JSON processor
+brew "jq"
+# Object-relational database system
+brew "postgresql@18", link: true
+# Terminal emulator as alternative to Apple's Terminal app
+cask "iterm2", args: { appdir: "~/Applications", fontdir: "~/Library/Fonts" }
+mas "1Password for Safari", id: 1569813296
+mas "Bear", id: 1091189122

@@ -1,0 +1,197 @@
+{
+  "casks": [
+    {
+      "artifacts": [
+        {
+          "uninstall": [
+            {
+              "quit": "com.googlecode.iterm2"
+            }
+          ]
+        },
+        {
+          "app": [
+            "iTerm.app"
+          ],
+          "target": "/Users/example/Applications/iTerm.app"
+        },
+        {
+          "zap": [
+            {
+              "trash": [
+                "~/Library/Application Scripts/com.googlecode.iterm2.iTermFileProvider",
+                "~/Library/Application Support/com.apple.sharedfilelist/com.apple.LSSharedFileList.ApplicationRecentDocuments/com.googlecode.iterm2.itermai.sfl*",
+                "~/Library/Application Support/com.apple.sharedfilelist/com.apple.LSSharedFileList.ApplicationRecentDocuments/com.googlecode.iterm2.sfl*",
+                "~/Library/Application Support/iTerm",
+                "~/Library/Application Support/iTerm2",
+                "~/Library/Caches/com.googlecode.iterm2",
+                "~/Library/Containers/com.googlecode.iterm2.iTermFileProvider",
+                "~/Library/Containers/iTermAI",
+                "~/Library/Cookies/com.googlecode.iterm2.binarycookies",
+                "~/Library/HTTPStorages/com.googlecode.iterm2",
+                "~/Library/HTTPStorages/com.googlecode.iterm2.binarycookies",
+                "~/Library/Preferences/com.googlecode.iterm2.plist",
+                "~/Library/Preferences/com.googlecode.iterm2.private.plist",
+                "~/Library/Saved Application State/com.googlecode.iterm2*.savedState",
+                "~/Library/WebKit/com.googlecode.iterm2"
+              ]
+            }
+          ]
+        }
+      ],
+      "auto_updates": true,
+      "autobump": true,
+      "bundle_short_version": "3.7.7",
+      "bundle_version": "3.7.7",
+      "caveats": null,
+      "caveats_rosetta": null,
+      "conflicts_with": {
+        "cask": [
+          "iterm2@beta",
+          "iterm2@nightly"
+        ]
+      },
+      "container": null,
+      "depends_on": {
+        "macos": {
+          ">=": [
+            "13"
+          ]
+        }
+      },
+      "deprecate_args": null,
+      "deprecated": false,
+      "deprecation_date": null,
+      "deprecation_reason": null,
+      "deprecation_replacement_cask": null,
+      "deprecation_replacement_formula": null,
+      "desc": "Terminal emulator as alternative to Apple's Terminal app",
+      "disable_args": null,
+      "disable_date": null,
+      "disable_reason": null,
+      "disable_replacement_cask": null,
+      "disable_replacement_formula": null,
+      "disabled": false,
+      "full_token": "iterm2",
+      "homepage": "https://iterm2.com/",
+      "languages": [],
+      "name": [
+        "iTerm2"
+      ],
+      "no_autobump_message": null,
+      "old_tokens": [],
+      "pinned": false,
+      "pinned_version": null,
+      "rename": [],
+      "ruby_source_checksum": {
+        "sha256": "0458b218bb5dd30476b6a7ad19064da28ef1bd17c6752c265f562b20405a7117"
+      },
+      "ruby_source_path": "Casks/i/iterm2.rb",
+      "sha256": "549eb2b21464d7f4606165e51c36a6b1a252ac9a79958228a240152412759da2",
+      "skip_livecheck": false,
+      "tap": "homebrew/cask",
+      "tap_git_head": "268d2a9ee0e00a7929c3452b53ed3de86f5a06d8",
+      "token": "iterm2",
+      "url": "https://iterm2.com/downloads/stable/iTerm2-3_7_7.zip",
+      "url_specs": {},
+      "version": "3.7.7"
+    }
+  ],
+  "formulae": [
+    {
+      "aliases": [],
+      "autobump": true,
+      "bottle": {
+        "stable": {
+          "files": {
+            "arm64_golden_gate": {
+              "cellar": ":any_skip_relocation",
+              "sha256": "1e342bee4a3cab8045bb510dc5b4474b58a5a73eb7e1657e3caba200b3f3b5d3",
+              "url": "https://ghcr.io/v2/homebrew/core/fzf/blobs/sha256:1e342bee4a3cab8045bb510dc5b4474b58a5a73eb7e1657e3caba200b3f3b5d3"
+            }
+          },
+          "rebuild": 0,
+          "root_url": "https://ghcr.io/v2/homebrew/core"
+        }
+      },
+      "build_dependencies": [
+        "go"
+      ],
+      "caveats": "To set up shell integration, see:\n  https://github.com/junegunn/fzf#setting-up-shell-integration\nTo use fzf in Vim, add the following line to your .vimrc:\n  set rtp+=$HOMEBREW_PREFIX/opt/fzf\n",
+      "compatibility_version": 1,
+      "conflicts_with": [],
+      "conflicts_with_reasons": [],
+      "dependencies": [],
+      "deprecate_args": null,
+      "deprecated": false,
+      "deprecation_date": null,
+      "deprecation_reason": null,
+      "deprecation_replacement_cask": null,
+      "deprecation_replacement_formula": null,
+      "desc": "Command-line fuzzy finder written in Go",
+      "disable_args": null,
+      "disable_date": null,
+      "disable_reason": null,
+      "disable_replacement_cask": null,
+      "disable_replacement_formula": null,
+      "disabled": false,
+      "full_name": "fzf",
+      "homepage": "https://junegunn.github.io/fzf/",
+      "keg_only": false,
+      "keg_only_reason": null,
+      "license": "MIT",
+      "link_overwrite": [],
+      "local_patch_checksums": {},
+      "name": "fzf",
+      "no_autobump_message": null,
+      "no_linkage_dependencies": [],
+      "oldnames": [],
+      "optional_dependencies": [],
+      "options": [],
+      "patches": [],
+      "pinned": false,
+      "post_install_defined": false,
+      "post_install_steps": [],
+      "pour_bottle_only_if": null,
+      "recommended_dependencies": [],
+      "requirements": [],
+      "revision": 0,
+      "ruby_source_checksum": {
+        "sha256": "e81dc482ba88af93d2365362651e5d404af9eebe3ed09c9b59cd57fb8fbfffdb"
+      },
+      "ruby_source_path": "Formula/f/fzf.rb",
+      "service": null,
+      "skip_livecheck": false,
+      "tap": "homebrew/core",
+      "tap_git_head": "c9b7dd72533f340d7ebab4816c1b3c098c65de83",
+      "test_dependencies": [],
+      "urls": {
+        "head": {
+          "branch": "master",
+          "url": "https://github.com/junegunn/fzf.git",
+          "using": null
+        },
+        "stable": {
+          "checksum": "165f6e0c1b9ba082346233681e3f1d1374e37f9fd3c1d7b6dfe09659ab893faa",
+          "revision": null,
+          "tag": null,
+          "url": "https://github.com/junegunn/fzf/archive/refs/tags/v0.75.0.tar.gz",
+          "using": null
+        }
+      },
+      "uses_from_macos": [
+        "ncurses"
+      ],
+      "uses_from_macos_bounds": [
+        {}
+      ],
+      "version_scheme": 0,
+      "versioned_formulae": [],
+      "versions": {
+        "bottle": true,
+        "head": "HEAD",
+        "stable": "0.75.0"
+      }
+    }
+  ]
+}
