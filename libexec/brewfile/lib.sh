@@ -2,6 +2,7 @@
 # lib.sh - shared setup for the brewfile subcommands. Sourced, never executed.
 #
 # Provides:
+#   RUBY                               the Ruby interpreter (BREWFILE_RUBY, default `ruby`), checked to be 2.7+
 #   log_info, log_success, log_error   colored messages (colors off when stdout is not a tty or NO_COLOR is set)
 #   BREWFILE_DIR                       directory that holds the Brewfiles
 #   BREWFILE_PREFIX                    file name prefix of the Brewfiles (default "Brewfile.")
@@ -14,6 +15,16 @@ fi
 
 if (( BASH_VERSINFO[0] < 4 )); then
   echo "Error: brewfile requires bash 4 or newer (found ${BASH_VERSION})" >&2
+  exit 1
+fi
+
+# The Ruby helpers use Array#filter_map, so they need Ruby 2.7 or newer (macOS ships 2.6).
+# BREWFILE_RUBY names the interpreter; the Homebrew wrapper sets it, because a shell that
+# re-activates a version manager at start-up can put a different `ruby` first on PATH.
+RUBY="${BREWFILE_RUBY:-ruby}"
+if ! command -v "${RUBY}" >/dev/null 2>&1 \
+   || ! "${RUBY}" -e 'exit(Gem::Version.new(RUBY_VERSION) >= Gem::Version.new("2.7") ? 0 : 1)' 2>/dev/null; then
+  echo "Error: brewfile requires Ruby 2.7 or newer (${RUBY}; macOS ships 2.6, try: brew install ruby)" >&2
   exit 1
 fi
 

@@ -16,7 +16,7 @@ they changed, so anything else you have staged stays staged.
 ## Requirements
 
 - [Homebrew](https://brew.sh)
-- Ruby (standard library only)
+- Ruby 2.7 or newer, standard library only (macOS ships 2.6; `brew install ruby`)
 - [fzf](https://github.com/junegunn/fzf), to pick a Brewfile when you don't name one
 - bash 4 or newer (macOS ships 3.2; `brew install bash`)
 - Optional, for `audit`: `mas`, `npm` and `code`, for the package types they track
@@ -55,6 +55,7 @@ export BREWFILE_DIR=~/.dotfiles      # or set it once
 | `BREWFILE_DIR` | git root of the current directory | Directory that holds the Brewfiles (same as `-C`) |
 | `BREWFILE_PREFIX` | `Brewfile.` | File name prefix. `Brewfile-` makes `Brewfile-work` a Brewfile |
 | `BREWFILE_COMMIT_PREFIX` | `brewfile add` / `brewfile remove` | Prefix of the commit message, for example `brew_add` |
+| `BREWFILE_RUBY` | `ruby` from `PATH` | Ruby interpreter, 2.7 or newer. The Homebrew install sets it to Homebrew's Ruby |
 
 ## Usage
 

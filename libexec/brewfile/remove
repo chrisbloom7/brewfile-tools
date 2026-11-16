@@ -152,7 +152,7 @@ HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_ENV_HINTS=1 \
 # ---------------------------------------------------------------------------
 # Modify Brewfile(s) via Ruby helper
 # ---------------------------------------------------------------------------
-ruby "${LIBEXEC_DIR}/brew_remove_helper.rb" "${TARGET_BREWFILES[@]}" \
+"${RUBY}" "${LIBEXEC_DIR}/brew_remove_helper.rb" "${TARGET_BREWFILES[@]}" \
   < "${INFO_FILE}" > "${RESULTS_FILE}" || {
   log_error "Failed to update Brewfile(s)"
   exit 1
@@ -192,7 +192,7 @@ if [[ "${SKIP_COMMIT}" == false ]]; then
   done
 
   if [[ ${#CHANGED_BREWFILES[@]} -gt 0 ]]; then
-    removed_names=$(ruby -e '
+    removed_names=$("${RUBY}" -e '
       require "json"
       r = JSON.parse(File.read(ARGV[0]))
       puts r.select{|x| x["status"]=="removed"}.map{|x| x["name"]}.uniq.join(", ")
@@ -213,7 +213,7 @@ fi
 # ---------------------------------------------------------------------------
 # Output
 # ---------------------------------------------------------------------------
-ruby -e '
+"${RUBY}" -e '
   require "json"
   results = JSON.parse(File.read(ARGV[0]))
 

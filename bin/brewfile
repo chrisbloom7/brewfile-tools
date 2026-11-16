@@ -20,6 +20,7 @@
 #   BREWFILE_PREFIX         File name prefix of the Brewfiles (default: "Brewfile.")
 #   BREWFILE_COMMIT_PREFIX  Prefix of the commit messages add and remove write
 #                           (default: "brewfile add" / "brewfile remove")
+#   BREWFILE_RUBY           Ruby interpreter to use, 2.7 or newer (default: ruby from PATH)
 #
 # Run `brewfile <command> --help` for the options of each command.
 set -euo pipefail
