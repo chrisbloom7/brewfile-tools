@@ -15,8 +15,8 @@ macOS and Linux. Read `README.md` before opening a PR.
 ./uninstall
 ```
 
-Needs `bats-core` (`brew install bats-core`; override the path with `BATS_BIN`), `ruby`, `fzf` and
-bash 4+ (macOS ships 3.2: `brew install bash`). There is no separate lint step.
+Needs `bats-core` (`brew install bats-core`; override the path with `BATS_BIN`), Ruby 2.7+ (macOS
+ships 2.6: `brew install ruby`), `fzf` and bash 4+ (macOS ships 3.2: `brew install bash`). There is no separate lint step.
 
 ## Architecture
 
@@ -39,6 +39,11 @@ bash 4+ (macOS ships 3.2: `brew install bash`). There is no separate lint step.
   exist to match.
 - Homebrew writes tap formulae and casks with their tap prefix (`brew "user/tap/name"`). `audit`
   compares brew and cask entries on the short name; `add` and `remove` accept either form.
+- Ruby 2.7+ only: the helpers use `Array#filter_map`, and `lib.sh` refuses to run on older Rubies with a
+  clear message. Every Ruby call goes through `"${RUBY}"` (`BREWFILE_RUBY`, default `ruby`), and the tests pin
+  it in `tests/test_helper.bash`: a shell that re-activates a version manager at start-up (this maintainer's
+  `BASH_ENV`) can otherwise put a different `ruby` first on `PATH`, so never rely on `PATH` order in tests.
+  Keep the README requirement and that check in step if you change the minimum.
 - Bash 4+ only. Do not use features that need newer than 4, and do not assume the system `/bin/bash`.
 - Ruby specs run with plain `ruby <file>`, not rspec. `./run-tests` runs both suites and exits non-zero
   if either fails.

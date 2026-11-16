@@ -15,6 +15,9 @@ _setup_common() {
   mkdir -p "${TEST_TMPDIR}/mock_bin"
   ln -s "$(command -v bash)" "${TEST_TMPDIR}/mock_bin/bash"
   unset BREWFILE_DIR BREWFILE_PREFIX BREWFILE_COMMIT_PREFIX
+  # Pin the Ruby that is current now, so tests that cd elsewhere (or run under a shell
+  # that re-activates a version manager) still use the same interpreter.
+  export BREWFILE_RUBY="$(ruby -e 'puts RbConfig.ruby')"
 }
 
 # _teardown_common

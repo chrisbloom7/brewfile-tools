@@ -121,7 +121,7 @@ HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_ENV_HINTS=1 \
 # ---------------------------------------------------------------------------
 # Modify Brewfile via Ruby helper
 # ---------------------------------------------------------------------------
-ruby "${LIBEXEC_DIR}/brew_add_helper.rb" "${BREWFILE}" \
+"${RUBY}" "${LIBEXEC_DIR}/brew_add_helper.rb" "${BREWFILE}" \
   < "${INFO_FILE}" > "${RESULTS_FILE}" || {
   log_error "Failed to update ${BREWFILE_PREFIX}${BREWFILE_SUFFIX}"
   exit 1
@@ -174,7 +174,7 @@ fi
 # ---------------------------------------------------------------------------
 if [[ "${SKIP_COMMIT}" == false ]]; then
   if ! git -C "${BREWFILE_DIR}" diff --quiet -- "${BREWFILE}" 2>/dev/null; then
-    added_names=$(ruby -e '
+    added_names=$("${RUBY}" -e '
       require "json"
       r = JSON.parse(File.read(ARGV[0]))
       puts r.reject{|x| x["status"]=="already_present"}.map{|x| x["name"]}.join(", ")
@@ -191,7 +191,7 @@ fi
 # ---------------------------------------------------------------------------
 # Output
 # ---------------------------------------------------------------------------
-ruby -e '
+"${RUBY}" -e '
   require "json"
   results = JSON.parse(File.read(ARGV[0]))
   label   = ARGV[1]

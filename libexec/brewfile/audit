@@ -144,7 +144,7 @@ HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_ENV_HINTS=1 \
 # Compute diff via Ruby helper
 # ---------------------------------------------------------------------------
 BREWFILE_LIST=$(IFS=,; echo "${BREWFILES[*]}")
-ruby "${LIBEXEC_DIR}/brew_audit_helper.rb" \
+"${RUBY}" "${LIBEXEC_DIR}/brew_audit_helper.rb" \
   "--installed=${DUMP_FILE}" \
   "--brewfiles=${BREWFILE_LIST}" \
   ${TYPE_FILTER:+"--types=${TYPE_FILTER}"} \
@@ -161,7 +161,7 @@ ruby "${LIBEXEC_DIR}/brew_audit_helper.rb" \
 use_color="false"
 [[ -z "${OUTPUT_FILE}" ]] && use_color="true"
 
-FORMATTED=$(ruby -e '
+FORMATTED=$("${RUBY}" -e '
   require "json"
 
   results   = JSON.parse(File.read(ARGV[0]))
@@ -192,8 +192,8 @@ FORMATTED=$(ruby -e '
 ' "${RESULTS_FILE}" "${use_color}")
 
 # Stats
-PLUS_COUNT=$(ruby -e 'require "json"; puts JSON.parse(File.read(ARGV[0])).count{|r| r["status"]=="+"} ' "${RESULTS_FILE}")
-MINUS_COUNT=$(ruby -e 'require "json"; puts JSON.parse(File.read(ARGV[0])).count{|r| r["status"]=="-"} ' "${RESULTS_FILE}")
+PLUS_COUNT=$("${RUBY}" -e 'require "json"; puts JSON.parse(File.read(ARGV[0])).count{|r| r["status"]=="+"} ' "${RESULTS_FILE}")
+MINUS_COUNT=$("${RUBY}" -e 'require "json"; puts JSON.parse(File.read(ARGV[0])).count{|r| r["status"]=="-"} ' "${RESULTS_FILE}")
 TOTAL=$((PLUS_COUNT + MINUS_COUNT))
 
 if [[ -n "${OUTPUT_FILE}" ]]; then

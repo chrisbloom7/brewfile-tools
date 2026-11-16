@@ -175,3 +175,48 @@ _init_real_repo() {
   [ "${status}" -eq 0 ] || { echo "status ${status}: ${output}"; return 1; }
   grep -q '"fzf"' "${FIXTURE_DIR}/Brewfile.test"
 }
+
+# ---------------------------------------------------------------------------
+# Ruby version guard (the helpers need Ruby 2.7+; macOS ships 2.6)
+# ---------------------------------------------------------------------------
+
+@test "brewfile: subcommands exit with a clear message when Ruby is too old" {
+  # Stand-in for an old Ruby: the version check (ruby -e ...) fails
+  printf '#!/usr/bin/env bash\nexit 1\n' > "${TEST_TMPDIR}/old_ruby"
+  chmod +x "${TEST_TMPDIR}/old_ruby"
+  for name in add remove audit; do
+    run env PATH="${TEST_TMPDIR}/mock_bin:${PATH}" BREWFILE_RUBY="${TEST_TMPDIR}/old_ruby" \
+      "${REPO_BIN}/brewfile" -C "${FIXTURE_DIR}" "${name}" -b test -S fzf
+    [ "${status}" -eq 1 ] || { echo "${name}: status ${status}: ${output}"; return 1; }
+    [[ "${output}" == *"requires Ruby 2.7 or newer"* ]] || { echo "${name}: got: ${output}"; return 1; }
+    [[ "${output}" != *"NoMethodError"* ]] || { echo "${name}: got: ${output}"; return 1; }
+  done
+}
+
+@test "brewfile: subcommands exit with a clear message when Ruby is missing" {
+  run env PATH="${TEST_TMPDIR}/mock_bin:${PATH}" BREWFILE_RUBY="${TEST_TMPDIR}/no/such/ruby" \
+    "${REPO_BIN}/brewfile" -C "${FIXTURE_DIR}" add -b test -S fzf
+  [ "${status}" -eq 1 ] || { echo "status ${status}: ${output}"; return 1; }
+  [[ "${output}" == *"requires Ruby 2.7 or newer"* ]] || { echo "Got: ${output}"; return 1; }
+}
+
+@test "brewfile: BREWFILE_RUBY selects the interpreter" {
+  # A wrapper that records its use and runs the real Ruby
+  cat > "${TEST_TMPDIR}/ruby_wrapper" <<WRAPPER
+#!/usr/bin/env bash
+echo used >> "${TEST_TMPDIR}/ruby_used"
+exec "${BREWFILE_RUBY}" "\$@"
+WRAPPER
+  chmod +x "${TEST_TMPDIR}/ruby_wrapper"
+  run env PATH="${TEST_TMPDIR}/mock_bin:${PATH}" BREWFILE_RUBY="${TEST_TMPDIR}/ruby_wrapper" \
+    "${REPO_BIN}/brewfile" -C "${FIXTURE_DIR}" add -b test -S -I fzf
+  [ "${status}" -eq 0 ] || { echo "status ${status}: ${output}"; return 1; }
+  [ -s "${TEST_TMPDIR}/ruby_used" ] || { echo "wrapper was not used"; return 1; }
+}
+
+@test "brewfile: dispatcher help does not need Ruby" {
+  printf '#!/usr/bin/env bash\nexit 1\n' > "${TEST_TMPDIR}/old_ruby"
+  chmod +x "${TEST_TMPDIR}/old_ruby"
+  run env PATH="${TEST_TMPDIR}/mock_bin:${PATH}" BREWFILE_RUBY="${TEST_TMPDIR}/old_ruby" "${REPO_BIN}/brewfile" --help
+  [ "${status}" -eq 0 ] || { echo "status ${status}: ${output}"; return 1; }
+}
