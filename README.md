@@ -9,6 +9,8 @@ brewfile remove ripgrep          # drop them from the Brewfile(s), brew uninstal
 brewfile audit                   # installed but not tracked (+), tracked but not installed (-)
 ```
 
+![brewfile add and remove in a demo repository](docs/demo.gif)
+
 `add` and `remove` keep each Brewfile's sections, descriptions and alphabetical order. They look the
 description up with `brew info` and write it as the entry's comment. They commit only the Brewfile
 they changed, so anything else you have staged stays staged.
