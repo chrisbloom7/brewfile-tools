@@ -26,11 +26,13 @@ supports them.
 
 ## Install
 
-With Homebrew (once the formula is published):
+With Homebrew:
 
 ```shell
 brew install chrisbloom7/tap/brewfile-tools
 ```
+
+If Homebrew refuses to load the formula from an untrusted tap, run `brew trust chrisbloom7/tap` first.
 
 From a checkout:
 
