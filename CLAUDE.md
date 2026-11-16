@@ -27,7 +27,7 @@ bash 4+ (macOS ships 3.2: `brew install bash`). There is no separate lint step.
   is its `--help`. They source `libexec/brewfile/lib.sh` (logging, bash guard, `BREWFILE_DIR`,
   `BREWFILE_PREFIX`).
 - `libexec/brewfile/brewfile.rb`: parses and rewrites Brewfiles. The `*_helper.rb` files wrap it for
-  each subcommand. `brew_info.rb` is not called by anything yet.
+  each subcommand.
 - `tests/bin/*.bats` (CLI) and `tests/helpers/*_spec.rb` (Ruby); `tests/test_helper.bash` is the
   shared bats setup.
 
