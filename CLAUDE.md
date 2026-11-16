@@ -47,6 +47,8 @@ bash 4+ (macOS ships 3.2: `brew install bash`). There is no separate lint step.
 - Keep `CHANGELOG.md` current under `[Unreleased]`. Releases go through a `chore/release-vX.Y.Z` PR,
   then a `vX.Y.Z` tag after the merge. The Homebrew formula lives in `chrisbloom7/homebrew-tap` and is
   bumped there, not here.
+  The release steps are the shared `release` skill (the `chrisbloom7-development` plugin); this repo's
+  parameters for it are in `.claude/release.md`.
 - The default branch is `main`; changes go through PRs.
 
 ## Claude Code setup
