@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-16
+
 ### Added
 
 - First standalone release, extracted from the author's dotfiles with its history. One command, `brewfile`, with the subcommands `add`, `remove` and `audit`. `./install` links it into `~/.local/bin`.
