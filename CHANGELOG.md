@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-16
+
 ### Fixed
 
 - On Ruby older than 2.7 (macOS ships 2.6), `add`, `remove` and `audit` failed with `undefined method 'filter_map'`. They now exit up front with "requires Ruby 2.7 or newer", and the README and the Homebrew formula say so.
